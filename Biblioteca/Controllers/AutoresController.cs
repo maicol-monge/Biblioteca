@@ -21,7 +21,7 @@ namespace Biblioteca.Controllers
         public IActionResult Get()
         {
             List<Autor> listadoAutor = (from e in _biblioContexto.autor
-                                           select e).ToList();
+                                        select e).ToList();
             if (listadoAutor.Count() == 0)
             {
                 return NotFound();
@@ -35,17 +35,17 @@ namespace Biblioteca.Controllers
         public IActionResult Get(int id)
         {
             var autor = (from a in _biblioContexto.autor
-                            join l in _biblioContexto.libro
-                                 on a.Id equals l.AutorId  
-                                 where l.AutorId == id
-                            select new
-                            {
-                                Id_autor = a.Id,
-                                a.Nombre,
-                                a.Nacionalidad,
-                                Id_Libro = l.Id,
-                                l.Titulo,
-                            }).ToList();
+                         join l in _biblioContexto.libro
+                              on a.Id equals l.AutorId
+                         where l.AutorId == id
+                         select new
+                         {
+                             Id_autor = a.Id,
+                             a.Nombre,
+                             a.Nacionalidad,
+                             Id_Libro = l.Id,
+                             l.Titulo,
+                         }).ToList();
 
             if (autor == null)
             {
@@ -76,8 +76,8 @@ namespace Biblioteca.Controllers
         public IActionResult ActualizarAutor(int id, [FromBody] Autor autorModificar)
         {
             Autor? autorActual = (from e in _biblioContexto.autor
-                                     where e.Id == id
-                                     select e).FirstOrDefault();
+                                  where e.Id == id
+                                  select e).FirstOrDefault();
 
 
 
@@ -88,7 +88,7 @@ namespace Biblioteca.Controllers
 
             autorActual.Nombre = autorModificar.Nombre;
             autorActual.Nacionalidad = autorModificar.Nacionalidad;
-            
+
 
             _biblioContexto.Entry(autorActual).State = EntityState.Modified;
             _biblioContexto.SaveChanges();
@@ -102,8 +102,8 @@ namespace Biblioteca.Controllers
         public IActionResult EliminarAutor(int id)
         {
             Autor? autor = (from e in _biblioContexto.autor
-                               where e.Id == id
-                               select e).FirstOrDefault();
+                            where e.Id == id
+                            select e).FirstOrDefault();
 
 
 
@@ -144,6 +144,77 @@ namespace Biblioteca.Controllers
             }
 
             return Ok(autor);
+        }
+
+        //Obtener los Autores con Más Libros Publicados
+        [HttpGet]
+        [Route("AutoresConMasLibros")]
+        public IActionResult AutoresMasLibros()
+        {
+            var autoresConMasLibros = (from a in _biblioContexto.autor
+                                       join l in _biblioContexto.libro on a.Id equals l.AutorId
+                                       group l by new { a.Id, a.Nombre } into grupo
+                                       orderby grupo.Count() descending
+                                       select new
+                                       {
+                                           AutorId = grupo.Key.Id,
+                                           NombreAutor = grupo.Key.Nombre,
+                                           CantidadLibros = grupo.Count()
+                                       }).ToList();
+
+            if (autoresConMasLibros == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(autoresConMasLibros);
+        }
+
+        //Verificar si un Autor Tiene Libros Publicados
+        [HttpGet]
+        [Route("TieneLibros/{id}")]
+        public IActionResult TieneLibros(int id)
+        {
+            var tieneLibros = (from a in _biblioContexto.autor
+                               join l in _biblioContexto.libro on a.Id equals l.AutorId
+                               where a.Id == id
+                               select l).Any();
+
+
+            if (tieneLibros == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(tieneLibros);
+        }
+
+
+        //Obtener el Primer Libro Publicado de un Autor
+        [HttpGet]
+        [Route("PrimerLibro/{id}")]
+        public IActionResult PrimerLibro(int id)
+        {
+            var primerLibro = (from l in _biblioContexto.libro
+                               join a in _biblioContexto.autor on l.AutorId equals a.Id
+                               where l.AutorId == id
+                               orderby l.AnioPublicacion ascending
+                               select new
+                               {
+                                   Autor = a.Nombre,
+                                   l.Id,
+                                   l.Titulo,
+                                   l.AnioPublicacion
+                               }).FirstOrDefault();
+
+
+
+            if (primerLibro == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(primerLibro);
         }
     }
 }

@@ -208,6 +208,50 @@ namespace Biblioteca.Controllers
             return Ok(listadoEquipo);
         }
 
+        //Obtener los Libros Más Recientes
+        [HttpGet]
+        [Route("LibrosMasRecientes")]
+        public IActionResult LibrosRecientes()
+        {
+            var librosMasRecientes = (from l in _biblioContexto.libro
+                                      orderby l.AnioPublicacion descending
+                                      select new
+                                      {
+                                          l.Id,
+                                          l.Titulo,
+                                          l.AutorId,
+                                          l.AnioPublicacion
+                                      }).Take(10).ToList();
 
+
+            if (librosMasRecientes == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(librosMasRecientes);
+        }
+
+        //Cantidad Total de Libros por Año
+        [HttpGet]
+        [Route("LibrosXAnio")]
+        public IActionResult Libros_por_Anio()
+        {
+            var librosPorAnio = (from l in _biblioContexto.libro
+                                 group l by l.AnioPublicacion into grupo
+                                 orderby grupo.Key
+                                 select new
+                                 {
+                                     Anio = grupo.Key,
+                                     CantidadLibros = grupo.Count()
+                                 }).ToList();
+
+            if (librosPorAnio == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(librosPorAnio);
+        }
     }
 }
