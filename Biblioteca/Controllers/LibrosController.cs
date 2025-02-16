@@ -181,5 +181,33 @@ namespace Biblioteca.Controllers
 
             return Ok(autor);
         }
+
+        [HttpGet]
+        [Route("GetLibrosPaginado")]
+        public IActionResult librosPaginados()
+        {
+            var listadoEquipo = (from ll in _biblioContexto.libro
+                                 join aa in _biblioContexto.autor
+                                      on ll.AutorId equals aa.Id
+                                 select new
+                                 {
+                                     Id_libro = ll.Id,
+                                     ll.Titulo,
+                                     ll.AnioPublicacion,
+                                     Id_Autor = aa.Id,
+                                     aa.Nombre,
+                                     ll.CategoriaId,
+                                     ll.Resumen
+                                 }).Skip(10).Take(10).ToList();
+
+            if (listadoEquipo.Count() == 0)
+            {
+                return NotFound();
+            }
+
+            return Ok(listadoEquipo);
+        }
+
+
     }
 }
